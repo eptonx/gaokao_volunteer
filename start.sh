@@ -18,6 +18,15 @@ FRONTEND_DIR="frontend/vuezhiyuan-project"
 BACKEND_PORT=8080
 FRONTEND_PORT=5173
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# JDK 21 候选路径 (按顺序查找)
+JDK21_CANDIDATES=(
+    "/e/jdk21"
+    "/c/Program Files/Java/latest/jdk-21"
+    "/e/Openjdk/jdk-21"
+)
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -45,9 +54,24 @@ check_cmd node    "Node.js"
 check_cmd npm     "npm"
 check_cmd mysql   "MySQL Client"
 
+# 自动检测 JDK 21+
 JAVA_VER=$(java -version 2>&1 | head -1 | grep -oP '\d+\.\d+\.\d+' | cut -d. -f1)
-if [ "$JAVA_VER" -lt 21 ]; then
-    warn "Java 版本为 $JAVA_VER，建议使用 Java 21+"
+JDK21_HOME=""
+if [ "$JAVA_VER" -ge 21 ]; then
+    info "Java $JAVA_VER 已就绪 (PATH)"
+else
+    warn "PATH 中的 Java 版本为 $JAVA_VER，查找 JDK 21+..."
+    for candidate in "${JDK21_CANDIDATES[@]}"; do
+        if [ -f "$candidate/bin/java" ]; then
+            JDK21_HOME="$candidate"
+            info "找到 JDK 21: $candidate"
+            break
+        fi
+    done
+    if [ -z "$JDK21_HOME" ]; then
+        error "未找到 JDK 21，请安装或修改脚本 JDK21_CANDIDATES"
+        exit 1
+    fi
 fi
 
 # ==================== 数据库初始化 ====================
@@ -85,8 +109,6 @@ fi
 # ==================== 启动服务 ====================
 title "4. 启动服务"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
 # 清理函数：退出时杀掉子进程
 cleanup() {
     echo ""
@@ -100,6 +122,10 @@ trap cleanup SIGINT SIGTERM
 
 # 启动后端
 echo "启动后端 (Spring Boot, 端口 $BACKEND_PORT)..."
+if [ -n "$JDK21_HOME" ]; then
+    echo "  使用 JDK: $JDK21_HOME"
+    export JAVA_HOME="$JDK21_HOME"
+fi
 cd "$SCRIPT_DIR/$BACKEND_DIR"
 if [ -f "./mvnw" ]; then
     ./mvnw spring-boot:run -q &

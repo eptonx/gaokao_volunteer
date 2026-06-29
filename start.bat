@@ -18,18 +18,42 @@ set FRONTEND_PORT=5173
 set SCRIPT_DIR=%~dp0
 set SCRIPT_DIR=%SCRIPT_DIR:~0,-1%
 
+:: JDK 21 路径 (如果 JAVA_HOME 不是 21+，会按以下顺序自动查找)
+set JDK21_PATH=
+set JDK21_CANDIDATES=E:\jdk21 C:\Program Files\Java\latest\jdk-21 E:\Openjdk\jdk-21
+
 :: ==================== 环境检查 ====================
 echo.
 echo ==============================================
 echo   1. 环境检查
 echo ==============================================
 
+echo 检查 Java...
 call :check java  "Java JDK 21+"  >nul 2>&1 || (
     echo [✗] Java 未安装，请先安装 JDK 21+
     pause
     exit /b 1
 )
-echo [✓] Java 已就绪
+
+:: 自动检测 JDK 21+ 并设置 JAVA_HOME
+for /f "tokens=1" %%v in ('java -version 2^>^&1 ^| findstr /i "version"') do set JAVA_VER=%%v
+java -version 2>&1 | findstr /i "21\." >nul
+if %errorlevel% equ 0 (
+    echo [✓] Java 21+ 已就绪 (PATH)
+) else (
+    echo [!] PATH 中的 Java 非 21 版本，尝试查找 JDK 21...
+    for %%d in (%JDK21_CANDIDATES%) do (
+        if exist "%%d\bin\java.exe" (
+            set JDK21_PATH=%%d
+            echo [✓] 找到 JDK 21: %%d
+        )
+    )
+    if "!JDK21_PATH!"=="" (
+        echo [✗] 未找到 JDK 21，请安装 JDK 21 或修改脚本 JDK21_CANDIDATES
+        pause
+        exit /b 1
+    )
+)
 
 call :check node   "Node.js"  >nul 2>&1 || (
     echo [✗] Node.js 未安装，请先安装
@@ -103,7 +127,12 @@ echo   4. 启动服务
 echo ==============================================
 
 echo 启动后端 (Spring Boot, 端口 %BACKEND_PORT%)...
-start "高考志愿-后端" cmd /c "cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
+if not "!JDK21_PATH!"=="" (
+    echo   使用 JDK: !JDK21_PATH!
+    start "高考志愿-后端" cmd /c "set JAVA_HOME=!JDK21_PATH! && cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
+) else (
+    start "高考志愿-后端" cmd /c "cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
+)
 
 echo 启动前端 (Vite, 端口 %FRONTEND_PORT%)...
 start "高考志愿-前端" cmd /c "cd /d "%SCRIPT_DIR%\%FRONTEND_DIR%" && npm run dev"
