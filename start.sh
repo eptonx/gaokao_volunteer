@@ -57,19 +57,22 @@ check_cmd mysql   "MySQL Client"
 # 自动检测 JDK 21+
 JAVA_VER=$(java -version 2>&1 | head -1 | grep -oP '\d+\.\d+\.\d+' | cut -d. -f1)
 JDK21_HOME=""
-if [ "$JAVA_VER" -ge 21 ]; then
-    info "Java $JAVA_VER 已就绪 (PATH)"
-else
-    warn "PATH 中的 Java 版本为 $JAVA_VER，查找 JDK 21+..."
-    for candidate in "${JDK21_CANDIDATES[@]}"; do
-        if [ -f "$candidate/bin/java" ]; then
-            JDK21_HOME="$candidate"
-            info "找到 JDK 21: $candidate"
-            break
-        fi
-    done
-    if [ -z "$JDK21_HOME" ]; then
-        error "未找到 JDK 21，请安装或修改脚本 JDK21_CANDIDATES"
+
+# 优先在候选路径中查找 JDK 21
+for candidate in "${JDK21_CANDIDATES[@]}"; do
+    if [ -f "$candidate/bin/java" ]; then
+        JDK21_HOME="$candidate"
+        info "Java 21 已就绪 ($candidate)"
+        break
+    fi
+done
+
+# 候选都没找到，检查 PATH 中的 Java 版本
+if [ -z "$JDK21_HOME" ]; then
+    if [ "$JAVA_VER" -ge 21 ]; then
+        info "Java $JAVA_VER 在 PATH 中已就绪"
+    else
+        error "未找到 JDK 21 (PATH 版本为 $JAVA_VER)，请安装或修改 JDK21_CANDIDATES"
         exit 1
     fi
 fi
@@ -123,8 +126,8 @@ trap cleanup SIGINT SIGTERM
 # 启动后端
 echo "启动后端 (Spring Boot, 端口 $BACKEND_PORT)..."
 if [ -n "$JDK21_HOME" ]; then
-    echo "  使用 JDK: $JDK21_HOME"
     export JAVA_HOME="$JDK21_HOME"
+    echo "  JAVA_HOME=$JAVA_HOME"
 fi
 cd "$SCRIPT_DIR/$BACKEND_DIR"
 if [ -f "./mvnw" ]; then

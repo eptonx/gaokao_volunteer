@@ -36,20 +36,18 @@ call :check java  "Java JDK 21+"  >nul 2>&1 || (
 )
 
 :: 自动检测 JDK 21+ 并设置 JAVA_HOME
-for /f "tokens=1" %%v in ('java -version 2^>^&1 ^| findstr /i "version"') do set JAVA_VER=%%v
-java -version 2>&1 | findstr /i "21\." >nul
-if %errorlevel% equ 0 (
-    echo [✓] Java 21+ 已就绪 (PATH)
-) else (
-    echo [!] PATH 中的 Java 非 21 版本，尝试查找 JDK 21...
-    for %%d in (%JDK21_CANDIDATES%) do (
-        if exist "%%d\bin\java.exe" (
-            set JDK21_PATH=%%d
-            echo [✓] 找到 JDK 21: %%d
-        )
+for %%d in (%JDK21_CANDIDATES%) do (
+    if exist "%%d\bin\java.exe" (
+        set JDK21_PATH=%%d
+        echo [✓] Java 21 已就绪 (%%d)
     )
-    if "!JDK21_PATH!"=="" (
-        echo [✗] 未找到 JDK 21，请安装 JDK 21 或修改脚本 JDK21_CANDIDATES
+)
+if "!JDK21_PATH!"=="" (
+    java -version 2>&1 | findstr /i "21\." >nul
+    if !errorlevel! equ 0 (
+        echo [✓] Java 21+ 在 PATH 中已就绪
+    ) else (
+        echo [✗] 未找到 JDK 21，请安装或修改脚本 JDK21_CANDIDATES
         pause
         exit /b 1
     )
