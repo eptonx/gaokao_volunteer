@@ -12,6 +12,12 @@ MYSQL_PASS="dev_team_2026"
 MYSQL_DB="gaokao_volunteer"
 SQL_FILE="gaokao_volunteer.sql"
 
+# 开发环境变量 (对应 application.properties 中的 ${...} 占位符)
+export DB_USERNAME="dev_team"
+export DB_PASSWORD="dev_team_2026"
+export JWT_SECRET="mySecretKeyForJwtSigning2025!@#x"
+export DEEPSEEK_API_KEY="your_deepseek_api_key"
+
 BACKEND_DIR="backend"
 FRONTEND_DIR="frontend/vuezhiyuan-project"
 

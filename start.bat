@@ -9,6 +9,12 @@ set MYSQL_PASS=dev_team_2026
 set MYSQL_DB=gaokao_volunteer
 set SQL_FILE=gaokao_volunteer.sql
 
+:: 开发环境变量 (对应 application.properties 中的 ${...} 占位符)
+set DB_USERNAME=dev_team
+set DB_PASSWORD=dev_team_2026
+set JWT_SECRET=mySecretKeyForJwtSigning2025!@#x
+set DEEPSEEK_API_KEY=your_deepseek_api_key
+
 set BACKEND_DIR=backend
 set FRONTEND_DIR=frontend\vuezhiyuan-project
 
@@ -127,9 +133,9 @@ echo ==============================================
 echo 启动后端 (Spring Boot, 端口 %BACKEND_PORT%)...
 if not "!JDK21_PATH!"=="" (
     echo   使用 JDK: !JDK21_PATH!
-    start "高考志愿-后端" cmd /c "set JAVA_HOME=!JDK21_PATH! && cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
+    start "高考志愿-后端" cmd /c "set JAVA_HOME=!JDK21_PATH! && set DB_USERNAME=%DB_USERNAME% && set DB_PASSWORD=%DB_PASSWORD% && set JWT_SECRET=%JWT_SECRET% && set DEEPSEEK_API_KEY=%DEEPSEEK_API_KEY% && cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
 ) else (
-    start "高考志愿-后端" cmd /c "cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
+    start "高考志愿-后端" cmd /c "set DB_USERNAME=%DB_USERNAME% && set DB_PASSWORD=%DB_PASSWORD% && set JWT_SECRET=%JWT_SECRET% && set DEEPSEEK_API_KEY=%DEEPSEEK_API_KEY% && cd /d "%SCRIPT_DIR%\%BACKEND_DIR%" && mvnw spring-boot:run"
 )
 
 echo 启动前端 (Vite, 端口 %FRONTEND_PORT%)...
